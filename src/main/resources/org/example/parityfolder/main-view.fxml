@@ -20,7 +20,7 @@
          <Font size="14.0" />
       </font></Label>
    <VBox fx:id="subVbox" spacing="6.0" />
-   <HBox spacing="4.0">
+   <HBox alignment="CENTER" spacing="4.0">
       <children>
          <Button maxWidth="25.0" mnemonicParsing="false" onAction="#removeAll" text="-" />
          <Button mnemonicParsing="false" onAction="#addNamePath" prefWidth="150.0" text="+" />
