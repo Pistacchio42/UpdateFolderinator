@@ -128,7 +128,7 @@ public class HelloController {
         a.setOnCloseRequest(new EventHandler<WindowEvent>() {
             @Override
             public void handle(WindowEvent windowEvent) {
-                System.out.println("vai disa");
+                System.out.println("closing operations");
                 try{
                     FileOutputStream fout= new FileOutputStream("array.ser");
                     ObjectOutputStream out = new ObjectOutputStream(fout);
