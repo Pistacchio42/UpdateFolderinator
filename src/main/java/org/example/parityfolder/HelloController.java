@@ -16,7 +16,11 @@ import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Formatter;
@@ -38,6 +42,33 @@ public class HelloController {
         }
         updateLabels();
         initializeButtons();
+        searchNewer();
+    }
+
+    private void searchNewer() {
+        ArrayList<LocalDateTime> attributiFiles= new ArrayList<>();
+        for(NamePath path : pulsanti){
+            File dir = new File(path.getParth());
+            File[] files = dir.listFiles();
+            if (files == null || files.length == 0) {
+                break;
+            }
+
+            File lastModifiedFile = files[0];
+            for (int i = 1; i < files.length; i++) {
+                if (lastModifiedFile.lastModified() < files[i].lastModified()) {
+                    lastModifiedFile = files[i];
+                }
+            }
+            BasicFileAttributes a=null;
+            try {
+                a =Files.readAttributes(lastModifiedFile.toPath(),BasicFileAttributes.class);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            attributiFiles.add(a.lastModifiedTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
+
+        }
     }
 
     private void updateLabels() {
