@@ -4,9 +4,9 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -17,37 +17,45 @@ import javafx.stage.WindowEvent;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Formatter;
+
+import static java.nio.file.StandardCopyOption.*;
 
 public class HelloController {
     public Label data;
     public Label newerFolder;
     public VBox subVbox;
+    public Label newerFolderDate;
 
-    ArrayList<NamePath>pulsanti;
+    ArrayList<NamePath> pulsanti;
+    NamePath newer = null;
 
-    public void initialize(){
+    public void initialize() {
         try {
             FileInputStream fileIn = new FileInputStream("array.ser");
             ObjectInputStream objIn = new ObjectInputStream(fileIn);
-            pulsanti= (ArrayList<NamePath>) objIn.readObject();
+            pulsanti = (ArrayList<NamePath>) objIn.readObject();
         } catch (IOException | ClassNotFoundException e) {
-            pulsanti= new ArrayList<>();
+            pulsanti = new ArrayList<>();
         }
         updateLabels();
         initializeButtons();
         searchNewer();
     }
 
+    @FXML
     private void searchNewer() {
-        ArrayList<LocalDateTime> attributiFiles= new ArrayList<>();
-        for(NamePath path : pulsanti){
+        ArrayList<LocalDateTime> attributiFiles = new ArrayList<>();
+        String lastModifiedPath = "";
+        LocalDateTime lastModifiedTime = LocalDateTime.of(1000, 1, 1, 1, 1);
+        for (NamePath path : pulsanti) {
             File dir = new File(path.getParth());
             File[] files = dir.listFiles();
             if (files == null || files.length == 0) {
@@ -60,28 +68,36 @@ public class HelloController {
                     lastModifiedFile = files[i];
                 }
             }
-            BasicFileAttributes a=null;
+            BasicFileAttributes a = null;
             try {
-                a =Files.readAttributes(lastModifiedFile.toPath(),BasicFileAttributes.class);
+                a = Files.readAttributes(lastModifiedFile.toPath(), BasicFileAttributes.class);
             } catch (IOException e) {
                 throw new RuntimeException(e);
+            }
+            if (lastModifiedTime.isBefore(a.lastModifiedTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime())) {
+                lastModifiedTime = a.lastModifiedTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+                lastModifiedPath = path.getName();
+                newer = path;
             }
             attributiFiles.add(a.lastModifiedTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
 
         }
+        newerFolder.setText(lastModifiedPath);
+        newerFolderDate.setText(lastModifiedTime.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
     }
 
+    @FXML
     private void updateLabels() {
         try {
             FileInputStream fileIn = new FileInputStream("data.ser");
             ObjectInputStream objIn = new ObjectInputStream(fileIn);
-            LocalDate update= (LocalDate) objIn.readObject();
-            data.setText( update.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+            LocalDateTime update = (LocalDateTime) objIn.readObject();
+            data.setText(update.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
         } catch (IOException | ClassNotFoundException e) {
             try {
-                FileOutputStream fout= new FileOutputStream("data.ser");
+                FileOutputStream fout = new FileOutputStream("data.ser");
                 ObjectOutputStream out = new ObjectOutputStream(fout);
-                out.writeObject(LocalDate.of(1000,1,1));
+                out.writeObject(LocalDateTime.of(1000, 1, 1,1,1,1));
                 out.close();
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
@@ -91,27 +107,28 @@ public class HelloController {
 
 
     private void initializeButtons() {
-        subVbox. getChildren().clear();
-        for(NamePath pezzo:pulsanti) {
-            System.out.println("adding: "+pezzo.getName());
+        subVbox.getChildren().clear();
+        for (NamePath pezzo : pulsanti) {
+            System.out.println("adding: " + pezzo.getName());
             VBox col = new VBox();
             col.setAlignment(Pos.CENTER);
             col.setSpacing(2);
             HBox row = new HBox();
             row.setAlignment(Pos.CENTER);
             row.setSpacing(4);
-            Label lab=new Label(pezzo.getParth());
+            Label lab = new Label(pezzo.getParth());
             TextField field = new TextField();
-            field.setText(!pezzo.getName().equals("")?pezzo.getName():"");
+            field.setText(!pezzo.getName().equals("") ? pezzo.getName() : "");
             field.setPrefHeight(30);
             field.setOnAction(new EventHandler<ActionEvent>() {
                 @Override
                 public void handle(ActionEvent event) {
                     System.out.println("updating nome");
                     pezzo.setName(field.getText());
+                    searchNewer();
                 }
             });
-            Button button= new Button("Scegli");
+            Button button = new Button("Scegli");
             button.setOnAction(new EventHandler<ActionEvent>() {
                 @Override
                 public void handle(ActionEvent event) {
@@ -119,11 +136,12 @@ public class HelloController {
                     DirectoryChooser chooser = new DirectoryChooser();
                     chooser.setTitle("Scegli la cartella da aggiungere alla lista");
                     chooser.setInitialDirectory(new File("C:\\"));
-                    File directory= chooser.showDialog(new Stage());
-                    if (directory!= null ) {
+                    File directory = chooser.showDialog(new Stage());
+                    if (directory != null) {
                         lab.setText(directory.toString());
                         pezzo.setParth(directory.toString());
                     }
+                    searchNewer();
                 }
             });
             row.getChildren().add(field);
@@ -135,22 +153,35 @@ public class HelloController {
     }
 
     public void updateOlder(ActionEvent event) {
-
-
-        LocalDate ora= LocalDate.now();
+        for(NamePath search: pulsanti){
+            if(!search.equals(newer)){
+                delete(new File(search.getParth()));
+                try {
+                    copyDirectory(newer.getParth(), search.getParth());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    System.out.println("failed to copy");
+                }
+            }
+        }
+        LocalDateTime ora = LocalDateTime.now();
         try {
-            FileOutputStream fout= new FileOutputStream("data.ser");
+            FileOutputStream fout = new FileOutputStream("data.ser");
             ObjectOutputStream out = new ObjectOutputStream(fout);
             out.writeObject(ora);
             out.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        data.setText(ora.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        data.setText(ora.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Cambiamenti");
+        alert.setHeaderText("Ho aggiornato le cartelle vecchie");
+        alert.show();
     }
 
     public void addNamePath(ActionEvent event) {
-        pulsanti.add(new NamePath("",""));
+        pulsanti.add(new NamePath("", ""));
         initializeButtons();
     }
 
@@ -160,8 +191,9 @@ public class HelloController {
             @Override
             public void handle(WindowEvent windowEvent) {
                 System.out.println("closing operations");
-                try{
-                    FileOutputStream fout= new FileOutputStream("array.ser");
+                try {
+                    cleanEmpty();
+                    FileOutputStream fout = new FileOutputStream("array.ser");
                     ObjectOutputStream out = new ObjectOutputStream(fout);
                     out.writeObject(pulsanti);
                     out.close();
@@ -172,8 +204,44 @@ public class HelloController {
         });
     }
 
+    private void cleanEmpty() {
+        int i = 0;
+        while (i < pulsanti.size()) {
+            if (pulsanti.get(i) == null || pulsanti.get(i).getParth().equals(""))
+                pulsanti.remove(i);
+            else i++;
+        }
+    }
+
     public void removeAll(ActionEvent event) {
-        pulsanti.clear();
+        pulsanti.remove(pulsanti.size() - 1);
+        searchNewer();
         initializeButtons();
+    }
+
+    public static void copyDirectory(String sourceDirectoryLocation, String destinationDirectoryLocation)
+            throws IOException {
+        Files.walk(Paths.get(sourceDirectoryLocation))
+                .forEach(source -> {
+                    Path destination = Paths.get(destinationDirectoryLocation, source.toString()
+                            .substring(sourceDirectoryLocation.length()));
+                    try {
+                        Files.copy(source, destination);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+    }
+
+    public static boolean delete(File file) {
+        File[] flist = null;
+        if(file == null) return false;
+        if (file.isFile()) return file.delete();
+        if (!file.isDirectory()) return false;
+        flist = file.listFiles();
+        if (flist != null && flist.length > 0)
+            for (File f : flist)
+                if (!delete(f)) return false;
+        return file.delete();
     }
 }
