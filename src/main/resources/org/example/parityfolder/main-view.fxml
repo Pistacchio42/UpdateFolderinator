@@ -7,7 +7,6 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-
 <VBox alignment="CENTER" spacing="10.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.parityfolder.HelloController">
   <padding>
     <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
@@ -35,7 +34,7 @@
    </HBox>
    <HBox alignment="CENTER">
       <children>
-         <Label text="Ultimo aggiornamento: " />
+         <Label text="Last Update" />
          <Label fx:id="data" text="Label" />
       </children>
    </HBox>
@@ -43,19 +42,19 @@
       <children>
          <HBox alignment="CENTER">
             <children>
-               <Label text="La cartella più recente è " />
+               <Label text="The most recent folder is: " />
                <Label fx:id="newerFolder" text="Label" />
             </children>
          </HBox>
          <HBox alignment="CENTER">
             <children>
-               <Label text="aggiornata in data: " />
+               <Label text="updated in date: " />
                <Label fx:id="newerFolderDate" text="Label" />
             </children>
          </HBox>
       </children>
    </VBox>
-   <Button mnemonicParsing="false" onAction="#updateOlder" prefHeight="50.0" prefWidth="120.0" text="Aggiorna">
+   <Button mnemonicParsing="false" onAction="#updateOlder" prefHeight="50.0" prefWidth="120.0" text="Update">
       <font>
          <Font size="18.0" />
       </font>

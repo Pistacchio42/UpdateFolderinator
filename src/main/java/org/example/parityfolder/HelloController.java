@@ -123,18 +123,18 @@ public class HelloController {
             field.setOnAction(new EventHandler<ActionEvent>() {
                 @Override
                 public void handle(ActionEvent event) {
-                    System.out.println("updating nome");
+                    System.out.println("updating name");
                     pezzo.setName(field.getText());
                     searchNewer();
                 }
             });
-            Button button = new Button("Scegli");
+            Button button = new Button("folder");
             button.setOnAction(new EventHandler<ActionEvent>() {
                 @Override
                 public void handle(ActionEvent event) {
                     System.out.println("updating label");
                     DirectoryChooser chooser = new DirectoryChooser();
-                    chooser.setTitle("Scegli la cartella da aggiungere alla lista");
+                    chooser.setTitle("Choose a new folder to add to the list");
                     chooser.setInitialDirectory(new File("C:\\"));
                     File directory = chooser.showDialog(new Stage());
                     if (directory != null) {
@@ -175,8 +175,8 @@ public class HelloController {
         }
         data.setText(ora.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Cambiamenti");
-        alert.setHeaderText("Ho aggiornato le cartelle vecchie");
+        alert.setTitle("Changes");
+        alert.setHeaderText("I updated the older folders");
         alert.show();
     }
 
